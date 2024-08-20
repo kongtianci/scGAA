@@ -1,5 +1,5 @@
 # scGAA
-## scGAA: General Gated Axial-Attention for Accurate Cell-type Annotation of single-cell RNA-seq data  
+## scGAA: A General Gated Axial-Attention Model for Accurate Cell-type Annotation of single-cell RNA-seq data  
 ## 1.Installation  
 [Download the code from the original GitHub](https://github.com/kongtianci/scGAA)  
 ## 2.Datasets  
