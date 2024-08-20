@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import torch.nn.functional as F
 
-def drop_path(x, drop_prob: float = 0., training: bool = False):
+def drop_set(x, drop_prob: float = 0., training: bool = False):
     if drop_prob == 0. or not training:
         return x
     keep_prob = 1 - drop_prob
@@ -21,15 +21,15 @@ def drop_path(x, drop_prob: float = 0., training: bool = False):
     output = x.div(keep_prob) * random_tensor
     return output
 
-class DropPath(nn.Module):
+class Droped(nn.Module):
     def __init__(self, drop_prob=None):
-        super(DropPath, self).__init__()
+        super(Droped, self).__init__()
         self.drop_prob = drop_prob
 
     def forward(self, x):
-        return drop_path(x, self.drop_prob, self.training)
+        return drop_set(x, self.drop_prob, self.training)
 
-class FeatureEmbed(nn.Module):
+class FeatureEmbeding(nn.Module):
     def __init__(self, num_genes, mask, embed_dim=192, fe_bias=True, norm_layer=None):
         super().__init__()
         self.num_genes = num_genes
@@ -184,24 +184,24 @@ class Block(nn.Module):
                  qk_scale=None,
                  drop_ratio=0., 
                  attn_drop_ratio=0.,
-                 drop_path_ratio=0.,
+                 drop_set_ratio=0.,
                  act_layer=nn.GELU,
                  norm_layer=nn.LayerNorm):
         super(Block, self).__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
                               attn_drop_ratio=attn_drop_ratio, proj_drop_ratio=drop_ratio)
-        self.drop_path = DropPath(drop_path_ratio) if drop_path_ratio > 0. else nn.Identity()
+        self.drop_set = Droped(drop_set_ratio) if drop_set_ratio > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop_ratio)
 
     def forward(self, x):
 
-        #x = x + self.drop_path(self.attn(self.norm1(x)))
+        
         h, weights = self.attn(self.norm1(x))
-        x = x + self.drop_path(h)
-        x = x + self.drop_path(self.mlp(self.norm2(x)))
+        x = x + self.drop_set(h)
+        x = x + self.drop_set(self.mlp(self.norm2(x)))
         return x, weights
 
 
@@ -228,7 +228,7 @@ class Transformer(nn.Module):
     def __init__(self, num_classes, num_genes, mask, fe_bias=True,
                  embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.0, qkv_bias=True,
                  qk_scale=None, representation_size=None, distilled=False, drop_ratio=0.,
-                 attn_drop_ratio=0., drop_path_ratio=0., embed_layer=FeatureEmbed, norm_layer=None,
+                 attn_drop_ratio=0., drop_set_ratio=0., embed_layer=FeatureEmbeding, norm_layer=None,
                  act_layer=None):
 
         """
@@ -247,7 +247,7 @@ class Transformer(nn.Module):
             distilled (bool): model includes a distillation token and head as in DeiT models
             drop_ratio (float): dropout rate 
             attn_drop_ratio (float): attention dropout rate
-            drop_path_ratio (float): stochastic depth rate
+            drop_set_ratio (float): stochastic depth rate
             embed_layer (nn.Module): feature embed layer
             norm_layer: (nn.Module): normalization layer
 
@@ -261,11 +261,11 @@ class Transformer(nn.Module):
         self.feature_embed = embed_layer(num_genes, mask = mask, embed_dim=embed_dim, fe_bias=fe_bias)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
-        dpr = [x.item() for x in torch.linspace(0, drop_path_ratio, depth)]
+        dsr = [x.item() for x in torch.linspace(0, drop_set_ratio, depth)]
         self.blocks = nn.ModuleList()
         for i in range(depth):
             layer = Block(dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                          drop_ratio=drop_ratio, attn_drop_ratio=attn_drop_ratio, drop_path_ratio=dpr[i],
+                          drop_ratio=drop_ratio, attn_drop_ratio=attn_drop_ratio, drop_set_ratio=dsr[i],
                           norm_layer=norm_layer, act_layer=act_layer)
             self.blocks.append(copy.deepcopy(layer))
         self.norm = norm_layer(embed_dim)
@@ -321,6 +321,10 @@ class Transformer(nn.Module):
 
 def _init_vit_weights(m):
 
+    """
+    ViT weight initialization
+    :param m: module
+    """
     if isinstance(m, nn.Linear):
         nn.init.trunc_normal_(m.weight, std=.01)
         if m.bias is not None:
@@ -336,7 +340,7 @@ def scTrans_model(num_classes, num_genes, mask, embed_dim=48,depth=2,num_heads=4
                         embed_dim=embed_dim,
                         depth=depth,
                         num_heads=num_heads,
-                        drop_ratio=0.5, attn_drop_ratio=0.5, drop_path_ratio=0.5,
+                        drop_ratio=0.5, attn_drop_ratio=0.5, drop_set_ratio=0.5,
                         representation_size=embed_dim if has_logits else None)
 
     return model
