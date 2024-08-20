@@ -35,7 +35,7 @@ def todense(adata):
     else:
         return adata.X
 
-class MyDataSet(Dataset):
+class Data_set(Dataset):
     """ 
     Preproces input matrix and labels.
 
@@ -49,7 +49,7 @@ class MyDataSet(Dataset):
     def __len__(self):
         return self.len
 
-def balance_populations(data):
+def Balance_Dataset(data):
     ct_names = np.unique(data[:,-1])
     ct_counts = pd.value_counts(data[:,-1])
     max_val = min(ct_counts.max(),np.int32(2000000/len(ct_counts)))
@@ -61,7 +61,7 @@ def balance_populations(data):
         balanced_data = np.r_[balanced_data,tmp_X]
     return np.delete(balanced_data,0,axis=0)
   
-def splitDataSet(adata,label_name='label', tr_ratio= 0.7): 
+def split_Dataset(adata,label_name='label', tr_ratio= 0.7): 
     """ 
     Split data set into training set and test set.
 
@@ -76,7 +76,7 @@ def splitDataSet(adata,label_name='label', tr_ratio= 0.7):
     el_data[:,-1] = label_encoder.fit_transform(el_data[:,-1])
     inverse = label_encoder.inverse_transform(range(0,np.max(el_data[:,-1])+1))
     el_data = el_data.astype(np.float32)
-    el_data = balance_populations(data = el_data)
+    el_data = Balance_Dataset(data = el_data)
     n_genes = len(el_data[1])-1
     train_size = int(len(el_data) * tr_ratio)
     train_dataset, valid_dataset = torch.utils.data.random_split(el_data, [train_size,len(el_data)-train_size])
@@ -167,7 +167,7 @@ def fit_model(adata, gmt_path,project = None, pre_weights='', label_name='label'
     if os.path.exists(project_path) is False:
         os.makedirs(project_path)
     tb_writer = SummaryWriter()
-    exp_train, label_train, exp_valid, label_valid, inverse,genes = splitDataSet(adata,label_name)
+    exp_train, label_train, exp_valid, label_valid, inverse,genes = split_Dataset(adata,label_name)
     if gmt_path is None:
         mask = np.random.binomial(1,mask_ratio,size=(len(genes), max_gs))
         node = list()
@@ -180,8 +180,8 @@ def fit_model(adata, gmt_path,project = None, pre_weights='', label_name='label'
     pd.DataFrame(inverse,columns=[label_name]).to_csv(project_path+'/label_dictionary.csv', quoting=None)
     num_classes = np.int64(torch.max(label_train)+1)
     #print("num_classes:",num_classes)
-    train_dataset = MyDataSet(exp_train, label_train)
-    valid_dataset = MyDataSet(exp_valid, label_valid)
+    train_dataset = Data_set(exp_train, label_train)
+    valid_dataset = Data_set(exp_valid, label_valid)
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
                                                shuffle=True,
