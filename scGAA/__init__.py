@@ -11,15 +11,13 @@ import os
 name = "scGAA"
 __version__ = '1.0.0'
 
-def train(adata, gmt_path, project=None, pre_weights='', label_name='label',max_g=399,max_gs=399,mask_ratio =0.015, n_unannotated = 1,batch_size=8, embed_dim=48,depth=2,num_heads=4,lr=0.001, epochs= 10, lrf=0.01):
+def train(adata, project=None, pre_weights='', label_name='label',max_g=399,max_gs=399,mask_ratio =0.015, n_unannotated = 1,batch_size=8, embed_dim=48,depth=2,num_heads=4,lr=0.001, epochs= 10, lrf=0.01):
     r"""
     Fit the model with train data
     Parameters
     ----------
     adatas
         Single-cell datasets
-    gmt_path
-        NULL (Scalable)
     project
         The name of project.
     pre_weights
@@ -57,7 +55,7 @@ def train(adata, gmt_path, project=None, pre_weights='', label_name='label',max_
     ./weights20220603/
         Weights
     """
-    fit_model(adata,gmt_path,project=project,pre_weights=pre_weights, label_name=label_name,
+    fit_model(adata,project=project,pre_weights=pre_weights, label_name=label_name,
               max_g=max_g,max_gs=max_gs,mask_ratio=mask_ratio, n_unannotated = n_unannotated,batch_size=batch_size, 
               embed_dim=embed_dim,depth=depth,num_heads=num_heads,lr=lr, epochs= epochs, lrf=lrf)
 

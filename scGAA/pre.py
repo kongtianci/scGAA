@@ -6,7 +6,7 @@ import numpy as np
 import torch.nn.functional as F
 import scanpy as sc
 import anndata as ad
-from .scGAA_model import scTrans_model as create_model
+from .scGAA_model import scgaa_model as create_model
 
 
 
@@ -49,7 +49,7 @@ def prediect(adata,model_weight_path,project,mask_path,laten=False,save_att = 'X
     dic = {}
     for i in range(len(dictionary)):
         dic[i] = dictionary[label_name][i]
-    model = create_model(num_classes=n_c, num_genes=num_genes,mask = mask, has_logits=False,depth=depth,num_heads=num_heads).to(device)
+    model = create_model(num_set=n_c, num_genes=num_genes,mask = mask, has_logits=False,depth=depth,num_heads=num_heads).to(device)
     # load model weights
     model.load_state_dict(torch.load(model_weight_path, map_location=device))
     model.eval()

@@ -66,7 +66,7 @@ sc.pp.highly_variable_genes(
     flavor="seurat",
     n_top_genes=3000,
 )
-#只保留高可变基因
+#Extracting highly variable genes
 data_top = data[:, data.var.highly_variable]
 print('shape: ',data_top.shape)
 

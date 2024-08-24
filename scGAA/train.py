@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 import platform
 
-from .scGAA_model import scTrans_model as create_model
+from .scGAA_model import scgaa_model as create_model
 
 
 def set_seed(seed):
@@ -154,7 +154,7 @@ def evaluate(model, data_loader, device, epoch):
                                                                                accu_num.item() / sample_num)
     return accu_loss.item() / (step + 1), accu_num.item() / sample_num
 
-def fit_model(adata, gmt_path,project = None, pre_weights='', label_name='label',max_g=399,max_gs=399, mask_ratio = 0.1,n_unannotated = 1,batch_size=8, embed_dim=48,depth=2,num_heads=4,lr=0.001, epochs= 10, lrf=0.01):
+def fit_model(adata ,project = None, pre_weights='', label_name='label',max_g=399,max_gs=399, mask_ratio = 0.1,n_unannotated = 1,batch_size=8, embed_dim=48,depth=2,num_heads=4,lr=0.001, epochs= 10, lrf=0.01):
     GLOBAL_SEED = 1
     set_seed(GLOBAL_SEED)
     #device = 'cuda:0'
@@ -168,17 +168,17 @@ def fit_model(adata, gmt_path,project = None, pre_weights='', label_name='label'
         os.makedirs(project_path)
     tb_writer = SummaryWriter()
     exp_train, label_train, exp_valid, label_valid, inverse,genes = split_Dataset(adata,label_name)
-    if gmt_path is None:
-        mask = np.random.binomial(1,mask_ratio,size=(len(genes), max_gs))
-        node = list()
-        for i in range(max_gs):
-            x = 'node %d' % i
-            node.append(x)
+    #if gmt_path is None:
+    mask = np.random.binomial(1,mask_ratio,size=(len(genes), max_gs))
+    node = list()
+    for i in range(max_gs):
+        x = 'node %d' % i
+        node.append(x)
         #print('Full connection!')
     np.save(project_path+'/mask.npy',mask)
     pd.DataFrame(node).to_csv(project_path+'/node.csv') 
     pd.DataFrame(inverse,columns=[label_name]).to_csv(project_path+'/label_dictionary.csv', quoting=None)
-    num_classes = np.int64(torch.max(label_train)+1)
+    num_set = np.int64(torch.max(label_train)+1)
     #print("num_classes:",num_classes)
     train_dataset = Data_set(exp_train, label_train)
     valid_dataset = Data_set(exp_valid, label_valid)
@@ -190,7 +190,7 @@ def fit_model(adata, gmt_path,project = None, pre_weights='', label_name='label'
                                              batch_size=batch_size,
                                              shuffle=False,
                                              pin_memory=True,drop_last=True)
-    model = create_model(num_classes=num_classes, num_genes=len(exp_train[0]),  mask = mask,embed_dim=embed_dim,depth=depth,num_heads=num_heads,has_logits=False).to(device) 
+    model = create_model(num_set=num_set, num_genes=len(exp_train[0]),  mask = mask,embed_dim=embed_dim,depth=depth,num_heads=num_heads,has_logits=False).to(device) 
     if pre_weights != "":
         assert os.path.exists(pre_weights), "pre_weights file: '{}' not exist.".format(pre_weights)
         preweights_dict = torch.load(pre_weights, map_location=device)
